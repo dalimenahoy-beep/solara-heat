@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>SOLARA HEAT — an open-world crime game</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a0f1e; font-family: "Segoe UI", system-ui, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .hud { position: fixed; z-index: 5; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); user-select: none; }
+  #stats { top: 14px; right: 18px; text-align: right; }
+  #money { font-size: 30px; font-weight: 800; letter-spacing: .5px; color: #7dff9a; }
+  #stars { font-size: 24px; letter-spacing: 3px; color: #ffd23e; min-height: 28px; }
+  #stars .off { color: rgba(255,255,255,.25); }
+  #healthWrap { left: 18px; bottom: 18px; width: 210px; }
+  .barLabel { font-size: 11px; font-weight: 700; letter-spacing: 2px; opacity: .85; }
+  .barOuter { height: 12px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.5); border-radius: 6px; overflow: hidden; }
+  #healthBar { height: 100%; width: 100%; background: linear-gradient(90deg, #ff5d5d, #ffb03a); transition: width .15s; }
+  #speedo { margin-top: 6px; font-size: 20px; font-weight: 800; }
+  #speedo small { font-size: 11px; opacity: .8; letter-spacing: 1px; }
+  #phone { top: 14px; left: 18px; width: 300px; background: rgba(10,10,24,.72); border: 1px solid rgba(255,255,255,.28);
+           border-radius: 14px; padding: 10px 14px 12px; backdrop-filter: blur(3px); }
+  #phoneFrom { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: #ffb03a; }
+  #objective { font-size: 15px; line-height: 1.35; margin-top: 3px; }
+  #objectiveMeta { font-size: 12.5px; color: #9adcff; margin-top: 4px; font-weight: 700; }
+  #minimap { right: 18px; bottom: 18px; width: 196px; height: 196px; border-radius: 50%;
+             border: 3px solid rgba(255,255,255,.65); box-shadow: 0 4px 18px rgba(0,0,0,.55); background: #223; }
+  #bustWrap { left: 50%; bottom: 178px; transform: translateX(-50%); width: 240px; display: none; text-align: center; }
+  #bustWrap .barLabel { color: #ffb3b3; }
+  #bustBar { height: 100%; width: 0%; background: linear-gradient(90deg, #2a6bff, #ff2a2a); }
+  #prompt { left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 19px; font-weight: 700;
+            background: rgba(0,0,0,.55); padding: 7px 18px; border-radius: 20px; display: none; }
+  #prompt b { color: #ffd23e; }
+  #toast { left: 50%; top: 84px; transform: translateX(-50%); font-size: 21px; font-weight: 800; text-align: center;
+           color: #ffe9a8; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #banner { left: 50%; top: 38%; transform: translate(-50%,-50%); text-align: center; display: none; pointer-events: none; }
+  #bannerTitle { font-size: 64px; font-weight: 900; letter-spacing: 4px; color: #ffdf6b; text-shadow: 0 4px 24px rgba(0,0,0,.9); }
+  #bannerSub { font-size: 20px; font-weight: 600; color: #fff; margin-top: 6px; }
+  #vignette { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: 0;
+              background: radial-gradient(ellipse at center, transparent 55%, rgba(200,0,0,.55) 100%); }
+  #sirenwash { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+              background: radial-gradient(ellipse at center, transparent 60%, rgba(40,80,255,.35) 100%); }
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; text-align: center; color: #fff; background: linear-gradient(180deg, rgba(26,8,32,.25), rgba(10,4,20,.78)); }
+  #titleScreen h1 { font-size: 92px; margin: 0; font-weight: 900; letter-spacing: 6px; line-height: .95;
+            background: linear-gradient(180deg, #ffe259, #ffa751 55%, #ff5e8a); -webkit-background-clip: text; background-clip: text; color: transparent;
+            filter: drop-shadow(0 6px 22px rgba(0,0,0,.65)); }
+  #titleScreen h2 { margin: 4px 0 0; font-size: 21px; font-weight: 600; letter-spacing: 5px; color: #ffe9c9; text-shadow: 0 2px 8px #000; }
+  #titleStory { max-width: 560px; font-size: 16.5px; line-height: 1.5; color: #f3e9ff; text-shadow: 0 1px 6px #000; margin: 26px 20px 6px; }
+  .btn { pointer-events: auto; cursor: pointer; margin-top: 16px; font-size: 21px; font-weight: 800; letter-spacing: 2px;
+         color: #241128; background: linear-gradient(180deg, #ffd23e, #ff9a3e); border: 0; border-radius: 30px; padding: 13px 44px;
+         box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.ghost { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.5); font-size: 16px; padding: 10px 30px; }
+  #controls { margin-top: 30px; font-size: 13.5px; line-height: 1.9; color: #e8dcff; text-shadow: 0 1px 4px #000; }
+  #controls b { color: #ffd23e; }
+  #endScreen { display: none; }
+  #endTitle { font-size: 74px; font-weight: 900; letter-spacing: 5px; }
+  #endSub { font-size: 19px; margin-top: 8px; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="SOLARA HEAT: explore Solara Bay on foot and by car"></canvas>
+
+<div class="hud" id="phone">
+  <div id="phoneFrom">LUPE · FIXER</div>
+  <div id="objective">Welcome to Solara Bay.</div>
+  <div id="objectiveMeta"></div>
+</div>
+<div class="hud" id="stats">
+  <div id="stars"></div>
+  <div id="money">$0</div>
+</div>
+<div class="hud" id="healthWrap">
+  <div class="barLabel">HEALTH</div>
+  <div class="barOuter"><div id="healthBar"></div></div>
+  <div id="speedo"></div>
+</div>
+<canvas class="hud" id="minimap" width="392" height="392" aria-hidden="true"></canvas>
+<div class="hud" id="bustWrap">
+  <div class="barLabel">ARREST</div>
+  <div class="barOuter"><div id="bustBar"></div></div>
+</div>
+<div class="hud" id="prompt"></div>
+<div class="hud" id="toast"></div>
+<div class="hud" id="banner"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
+<div id="sirenwash"></div>
+<div id="vignette"></div>
+
+<div class="screen" id="titleScreen">
+  <h1>SOLARA<br>HEAT</h1>
+  <h2>SOLARA BAY · EST. HEAT</h2>
+  <p id="titleStory">Marco Reyes swore he was done driving for other people's crimes. Then Lupe Ferrer called:
+     one week of work in Solara Bay — steal the right cars, move the right packages, rob the right bank,
+     and don't get caught. The bay is rich, the cops are bored, and the sun never stops shining on a getaway.</p>
+  <button class="btn" id="startBtn">START ENGINE</button>
+  <button class="btn ghost" id="continueBtn">CONTINUE SAVE</button>
+  <div id="controls">
+    <b>W A S D</b> move / drive &nbsp;·&nbsp; <b>SHIFT</b> run &nbsp;·&nbsp; <b>E</b> enter / exit car &nbsp;·&nbsp; <b>F</b> punch<br>
+    <b>SPACE</b> handbrake &nbsp;·&nbsp; <b>H</b> horn &nbsp;·&nbsp; <b>MOUSE</b> camera (click the game to lock) &nbsp;·&nbsp; <b>P</b> pause<br>
+    <b>M</b> next job from Lupe &nbsp;·&nbsp; <b>N</b> radio on / off
+  </div>
+</div>
+
+<div class="screen" id="endScreen">
+  <div id="endTitle">BUSTED</div>
+  <div id="endSub"></div>
+  <button class="btn" id="respawnBtn">BACK ON THE STREET</button>
+</div>
+
+<p id="status" role="status" aria-live="polite"></p>
+<script src="./vendor/three.min.js"></script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
